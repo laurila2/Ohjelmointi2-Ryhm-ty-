@@ -1,3 +1,8 @@
+*.pro.user
+build-*
+templates/*
+examples/*
+
 # Prerequisites
 *.d
 
