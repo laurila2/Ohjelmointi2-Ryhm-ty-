@@ -3,7 +3,6 @@
 #include <iostream>
 #include <vector>
 #include <random>
-#include<list>
 
 using namespace std;
 
@@ -19,6 +18,9 @@ const string GAME_OVER = "Game over!";
 
 using Game_row_type = vector<Card>;
 using Game_board_type = vector<vector<Card>>;
+
+// Pelaajat sisältävä vektori
+using Players_type = vector<Player>;
 
 // Muuntaa annetun numeerisen merkkijonon vastaavaksi kokonaisluvuksi
 // (kutsumalla stoi-funktiota).
@@ -227,14 +229,11 @@ void ask_product_and_calculate_factors(unsigned int& smaller_factor, unsigned in
     bigger_factor = product / smaller_factor;
 }
 
-// Lisää funktioita
-// More functions
-
-
 // Luo parametrina annetun määrän Player-olioita, joiden nimet luetaan yhdeltä,
 // käyttäjän syöttämältä riviltä.
-void ask_and_create_players()
+Players_type enter_players()
 {
+    Players_type players;
     unsigned int player_amount = 0;
 
     // Kysytään pelaajien määrää kunnes käyttäjä syöttää määräksi yksi tai useampi
@@ -247,15 +246,72 @@ void ask_and_create_players()
         player_amount = stoi_with_check(player_amount_str);
     }
 
-    std::cout << "List" << player_amount << " players: " << std::flush;
+    std::cout << "List" << player_amount << " players: ";
 
     // Luetaan pelaajien nimet yhdeltä riviltä, ja luodaan Player-oliot
     for(unsigned int i = 0; i < player_amount; ++i)
     {
-        std::string player_name = ";";
+        std::string player_name = "";
         std::cin >> player_name;
         Player player = Player(player_name);
+
+        // Lisätään uusi pelaaja tietorakenteeseen
+        players.push_back(player);
     }
+    return players;
+}
+
+bool check_coordinates_validity(const Game_board_type game_board, unsigned int factor1, unsigned int factor2, unsigned int& x1, unsigned int& y1,
+                                unsigned int& x2, unsigned int& y2)
+{
+
+
+    // Tarkistetaan ovatko kaikki koordinaatit lukuja, ja suurempia kuin 0
+    if(y1 != 0 || y2 != 0 || x1 != 0 || x2 != 0){
+
+        // Tarkistetaan sijaitsevatko kaikki koordinaatit pelilaudalla
+        if(y1 > factor1 || y2 > factor1 || x1 > factor2 || x2 > factor2){
+
+            // Tarkistetaan sijaitsevatko käännettävät kortit samoissa koordinaateissa
+            if(y1 != y2 && x1 != x2){
+
+                // Tarkistetaan onko kortit poistettu laudalta
+                if(game_board[y1-1][x1-1].get_visibility() != EMPTY && game_board[y2-1][x2-1].get_visibility() != EMPTY){
+                    return true;
+                }
+            }
+        }
+    }
+    std::cout << INVALID_CARD << std::endl;
+    return false;
+}
+
+bool enter_cards(const Players_type::value_type& player, std::string& x1, std::string& y1, std::string& x2, std::string& y2)
+{
+    while(true) {
+
+
+        std::cout << player.get_name() << ": " << INPUT_CARDS << std::flush;
+        std::string input = "";
+        std::getline(std::cin, input);
+
+        if(input == "q"){
+            std::cout << GIVING_UP << std::endl;
+            return false;
+        }
+        else{
+            x1 = input[0];
+            y1 = input[2];
+            x2 = input[4];
+            y2 = input[6];
+            return true;
+        }
+
+    }
+}
+
+void play(Game_board_type game_board, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2){
+
 }
 
 int main()
@@ -273,13 +329,47 @@ int main()
     int seed = stoi_with_check(seed_str);
     init_with_cards(game_board, seed);
 
-    // Lisää koodia
-    // More code
-    ask_and_create_players();
+    // Alustetaan koordinaateille tyhjät string-muuttujat
+    std::string x1_str = "";
+    std::string y1_str = "";
+    std::string x2_str = "";
+    std::string y2_str = "";
 
-    print(game_board);
+    Players_type players = enter_players();
+    Players_type::size_type player_amount = players.size();
 
+    Players_type::size_type player_index = 0;
 
+    while (true) {
+
+        Players_type::value_type in_turn = players.at(player_index);
+
+        if(!enter_cards(in_turn, x1_str, y1_str, x2_str, y2_str)){
+            break;
+        }
+
+        else{
+            unsigned int x1 = stoi_with_check(x1_str);
+            unsigned int y1 = stoi_with_check(y1_str);
+            unsigned int x2 = stoi_with_check(x2_str);
+            unsigned int y2 = stoi_with_check(y2_str);
+
+            if(!check_coordinates_validity(game_board, factor1, factor2, x1, y1, x2, y2)){
+                continue;
+            }
+            else{
+                play(game_board, x1-1, y1-1, x2-1, y2-1);
+                if(player_index == player_amount){
+                    player_index = 0;
+                }
+                else{
+                    ++player_index;
+                }
+            }
+        }
+    }
     return EXIT_SUCCESS;
 }
+
+
 

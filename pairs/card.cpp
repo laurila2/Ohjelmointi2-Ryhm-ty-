@@ -43,7 +43,7 @@ void Card::turn()
     {
         visibility_ = HIDDEN;
     }
-    else // if(visibility_ == EMPTY)
+    else if(visibility_ == EMPTY)
     {
         std::cout << "Cannot turn an empty place." << std::endl;
     }
