@@ -276,8 +276,7 @@ bool check_coordinates_validity(const Game_board_type game_board, std::vector<un
         if(y1 < factor2 && y2 < factor2 && x1 < factor1 && x2 < factor1){
 
             // Tarkistetaan sijaitsevatko käännettävät kortit samoissa koordinaateissa
-            // ei toimi vielä oikein!!
-            if(y1 != y2 && x1 != x2){
+            if (!(y1 == y2 && x1 == x2)){
 
                 // Tarkistetaan onko kortit poistettu laudalta
                 if(game_board[y1-1][x1-1].get_visibility() != EMPTY && game_board[y2-1][x2-1].get_visibility() != EMPTY){
@@ -296,25 +295,33 @@ bool enter_cards(const Players_type::value_type& player, std::vector<unsigned in
     while(true) {
 
         std::cout << player.get_name() << ": " << INPUT_CARDS << std::flush;
+
+        // Luetaan syöte merkki kerrallaan
         for(int i = 0; i < 4; ++i){
 
             std::string value;
             std::cin >> value;
+            // Lopetetaan ohjelma, jos syöte on "q"
             if(value == "q"){
                 cout << GIVING_UP;
                 return false;
             }
 
+            // Muutetaan merkki kokonaisluvuksi
             int int_value = stoi_with_check(value);
 
+            // Aloitetaan silmukka alusta, jos luettu merkki on 0 tai ei-kokonaisluku
             if(int_value != 0){
 
+                // Selvitetään jakojäännöksen avulla, onko kyseessä x- vai y-koordinaatti,
+                // Ja tarkistetaan löytyykö se pelilaudalta
+                // Lisätään vektoriin, mikäli näin on
                 if(i%2 == 0){
                     if(int_value < factor1){
                         coordinates.push_back(int_value);
                     }
                     else{
-                        std::cout << "ei käy";
+                        std::cout << INVALID_CARD <<std::endl;
                         continue;
                     }
                 }
@@ -323,7 +330,7 @@ bool enter_cards(const Players_type::value_type& player, std::vector<unsigned in
                         coordinates.push_back(int_value);
                     }
                     else{
-                        std::cout << "ei käy";
+                        std::cout << INVALID_CARD << std::endl;
                         continue;
                     }
                 }
