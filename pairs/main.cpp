@@ -270,12 +270,13 @@ bool check_coordinates_validity(const Game_board_type game_board, std::vector<un
     unsigned int y2 = coordinates.at(3);
 
     // Tarkistetaan ovatko kaikki koordinaatit lukuja, ja suurempia kuin 0
-    if(y1 != 0 || y2 != 0 || x1 != 0 || x2 != 0){
+    if(y1 != 0 && y2 != 0 && x1 != 0 && x2 != 0){
 
         // Tarkistetaan sijaitsevatko kaikki koordinaatit pelilaudalla
-        if(y1 > factor1 || y2 > factor1 || x1 > factor2 || x2 > factor2){
+        if(y1 < factor2 && y2 < factor2 && x1 < factor1 && x2 < factor1){
 
             // Tarkistetaan sijaitsevatko käännettävät kortit samoissa koordinaateissa
+            // ei toimi vielä oikein!!
             if(y1 != y2 && x1 != x2){
 
                 // Tarkistetaan onko kortit poistettu laudalta
@@ -286,6 +287,7 @@ bool check_coordinates_validity(const Game_board_type game_board, std::vector<un
         }
     }
     std::cout << INVALID_CARD << std::endl;
+    coordinates.clear();
     return false;
 }
 
@@ -294,7 +296,7 @@ bool enter_cards(const Players_type::value_type& player, std::vector<unsigned in
     while(true) {
 
         std::cout << player.get_name() << ": " << INPUT_CARDS << std::flush;
-        for(int i = 0; i <= 4; ++i){
+        for(int i = 0; i < 4; ++i){
 
             std::string value;
             std::cin >> value;
@@ -308,7 +310,7 @@ bool enter_cards(const Players_type::value_type& player, std::vector<unsigned in
             if(int_value != 0){
 
                 if(i%2 == 0){
-                    if(int_value < factor2){
+                    if(int_value < factor1){
                         coordinates.push_back(int_value);
                     }
                     else{
@@ -317,7 +319,7 @@ bool enter_cards(const Players_type::value_type& player, std::vector<unsigned in
                     }
                 }
                 if(i%2 == 1){
-                    if(int_value < factor1){
+                    if(int_value < factor2){
                         coordinates.push_back(int_value);
                     }
                     else{
@@ -341,9 +343,10 @@ void play(Game_board_type game_board, std::vector<unsigned int>& coordinates){
     unsigned int x2 = coordinates.at(2);
     unsigned int y2 = coordinates.at(3);
 
-    game_board[x1][y1].turn();
-    game_board[x2][y2].turn();
+    game_board[y1-1][x1-1].turn();
+    game_board[y2-1][x2-1].turn();
     print(game_board);
+    coordinates.clear();
     return;
 }
 
@@ -365,7 +368,6 @@ int main()
     // Alustetaan koordinaatit sisältävä vektori
     std::vector<unsigned int> coordinates;
 
-
     Players_type players = enter_players();
     Players_type::size_type player_amount = players.size();
 
@@ -386,6 +388,7 @@ int main()
             }
             else{
                 play(game_board, coordinates);
+
                 if(player_index == player_amount){
                     player_index = 0;
                 }
