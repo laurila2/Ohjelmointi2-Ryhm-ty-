@@ -273,7 +273,7 @@ bool check_coordinates_validity(const Game_board_type game_board, std::vector<un
     if(y1 != 0 && y2 != 0 && x1 != 0 && x2 != 0){
 
         // Tarkistetaan sijaitsevatko kaikki koordinaatit pelilaudalla
-        if(y1 < factor2 && y2 < factor2 && x1 < factor1 && x2 < factor1){
+        if(y1 <= factor1 && y2 <= factor1 && x1 <= factor2 && x2 <= factor2){
 
             // Tarkistetaan sijaitsevatko käännettävät kortit samoissa koordinaateissa
             if (!(y1 == y2 && x1 == x2)){
@@ -294,6 +294,10 @@ bool enter_cards(const Players_type::value_type& player, std::vector<unsigned in
 {
     while(true) {
 
+        // Sivuutetaan kaikki "jonossa" olevat merkit
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        // Kysytään syöte
         std::cout << player.get_name() << ": " << INPUT_CARDS << std::flush;
 
         // Luetaan syöte merkki kerrallaan
@@ -301,6 +305,7 @@ bool enter_cards(const Players_type::value_type& player, std::vector<unsigned in
 
             std::string value;
             std::cin >> value;
+
             // Lopetetaan ohjelma, jos syöte on "q"
             if(value == "q"){
                 cout << GIVING_UP;
@@ -316,30 +321,42 @@ bool enter_cards(const Players_type::value_type& player, std::vector<unsigned in
                 // Selvitetään jakojäännöksen avulla, onko kyseessä x- vai y-koordinaatti,
                 // Ja tarkistetaan löytyykö se pelilaudalta
                 // Lisätään vektoriin, mikäli näin on
+
+                // X-koordinaatit
                 if(i%2 == 0){
-                    if(int_value < factor1){
+                    if(int_value <= factor2){
                         coordinates.push_back(int_value);
                     }
                     else{
                         std::cout << INVALID_CARD <<std::endl;
-                        continue;
+                        coordinates.clear();
+                        break;
                     }
                 }
+                // Y-koordinaatit
                 if(i%2 == 1){
-                    if(int_value < factor2){
+                    if(int_value <= factor1){
                         coordinates.push_back(int_value);
                     }
                     else{
                         std::cout << INVALID_CARD << std::endl;
-                        continue;
+                        coordinates.clear();
+                        break;
                     }
                 }
             }
             else{
-                continue;
+                std::cout << INVALID_CARD << std::endl;
+                coordinates.clear();
+                break;
             }
         }
-        return true;
+        if(coordinates.size() == 4){
+            return true;
+        }
+        else{
+            continue;
+        }
     }
 }
 
@@ -396,7 +413,7 @@ int main()
             else{
                 play(game_board, coordinates);
 
-                if(player_index == player_amount){
+                if(player_index == player_amount - 1){
                     player_index = 0;
                 }
                 else{
