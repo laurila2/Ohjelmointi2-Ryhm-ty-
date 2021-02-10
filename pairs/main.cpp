@@ -261,7 +261,14 @@ Players_type enter_players()
     return players;
 }
 
-bool check_coordinates_validity(const Game_board_type game_board, std::vector<unsigned int>& coordinates, unsigned int factor1, unsigned int factor2)
+
+// Tarkistaa, että annetut koordinaatit ovat oikeellisia.
+
+//param:: game_board: pelilaudan kortit sisältävä tietorakenne
+//param:: coordinates: koordinaatit sisältävä vektori
+//param:: factor1: pelilaudan maksimi y-koordinaatti
+//param:: factor2: pelilaudan maksimi x-koordinaatti
+bool check_coordinates_validity(const Game_board_type game_board, std::vector<unsigned int>& coordinates)
 {
 
     unsigned int x1 = coordinates.at(0);
@@ -269,22 +276,15 @@ bool check_coordinates_validity(const Game_board_type game_board, std::vector<un
     unsigned int x2 = coordinates.at(2);
     unsigned int y2 = coordinates.at(3);
 
-    // Tarkistetaan ovatko kaikki koordinaatit lukuja, ja suurempia kuin 0
-    if(y1 != 0 && y2 != 0 && x1 != 0 && x2 != 0){
+    // Tarkistetaan sijaitsevatko käännettävät kortit samoissa koordinaateissa
+    if (!(y1 == y2 && x1 == x2)){
 
-        // Tarkistetaan sijaitsevatko kaikki koordinaatit pelilaudalla
-        if(y1 <= factor1 && y2 <= factor1 && x1 <= factor2 && x2 <= factor2){
-
-            // Tarkistetaan sijaitsevatko käännettävät kortit samoissa koordinaateissa
-            if (!(y1 == y2 && x1 == x2)){
-
-                // Tarkistetaan onko kortit poistettu laudalta
-                if(game_board[y1-1][x1-1].get_visibility() != EMPTY && game_board[y2-1][x2-1].get_visibility() != EMPTY){
-                    return true;
-                }
-            }
+        // Tarkistetaan onko kortit poistettu laudalta
+        if(game_board[y1-1][x1-1].get_visibility() != EMPTY && game_board[y2-1][x2-1].get_visibility() != EMPTY){
+            return true;
         }
     }
+
     std::cout << INVALID_CARD << std::endl;
     coordinates.clear();
     return false;
@@ -407,7 +407,7 @@ int main()
 
         else{
 
-            if(!check_coordinates_validity(game_board, coordinates, factor1, factor2)){
+            if(!check_coordinates_validity(game_board, coordinates)){
                 continue;
             }
             else{
