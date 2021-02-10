@@ -261,10 +261,13 @@ Players_type enter_players()
     return players;
 }
 
-bool check_coordinates_validity(const Game_board_type game_board, unsigned int factor1, unsigned int factor2, unsigned int& x1, unsigned int& y1,
-                                unsigned int& x2, unsigned int& y2)
+bool check_coordinates_validity(const Game_board_type game_board, std::vector<unsigned int>& coordinates, unsigned int factor1, unsigned int factor2)
 {
 
+    unsigned int x1 = coordinates.at(0);
+    unsigned int y1 = coordinates.at(1);
+    unsigned int x2 = coordinates.at(2);
+    unsigned int y2 = coordinates.at(3);
 
     // Tarkistetaan ovatko kaikki koordinaatit lukuja, ja suurempia kuin 0
     if(y1 != 0 || y2 != 0 || x1 != 0 || x2 != 0){
@@ -286,32 +289,62 @@ bool check_coordinates_validity(const Game_board_type game_board, unsigned int f
     return false;
 }
 
-bool enter_cards(const Players_type::value_type& player, std::string& x1, std::string& y1, std::string& x2, std::string& y2)
+bool enter_cards(const Players_type::value_type& player, std::vector<unsigned int>& coordinates, const int factor1, const int factor2)
 {
     while(true) {
 
-
         std::cout << player.get_name() << ": " << INPUT_CARDS << std::flush;
-        std::string input = "";
-        std::getline(std::cin, input);
+        for(int i = 0; i <= 4; ++i){
 
-        if(input == "q"){
-            std::cout << GIVING_UP << std::endl;
-            return false;
-        }
-        else{
-            x1 = input[0];
-            y1 = input[2];
-            x2 = input[4];
-            y2 = input[6];
-            return true;
-        }
+            std::string value;
+            std::cin >> value;
+            if(value == "q"){
+                cout << GIVING_UP;
+                return false;
+            }
 
+            int int_value = stoi_with_check(value);
+
+            if(int_value != 0){
+
+                if(i%2 == 0){
+                    if(int_value < factor2){
+                        coordinates.push_back(int_value);
+                    }
+                    else{
+                        std::cout << "ei käy";
+                        continue;
+                    }
+                }
+                if(i%2 == 1){
+                    if(int_value < factor1){
+                        coordinates.push_back(int_value);
+                    }
+                    else{
+                        std::cout << "ei käy";
+                        continue;
+                    }
+                }
+            }
+            else{
+                continue;
+            }
+        }
+        return true;
     }
 }
 
-void play(Game_board_type game_board, unsigned int x1, unsigned int y1, unsigned int x2, unsigned int y2){
 
+void play(Game_board_type game_board, std::vector<unsigned int>& coordinates){
+    unsigned int x1 = coordinates.at(0);
+    unsigned int y1 = coordinates.at(1);
+    unsigned int x2 = coordinates.at(2);
+    unsigned int y2 = coordinates.at(3);
+
+    game_board[x1][y1].turn();
+    game_board[x2][y2].turn();
+    print(game_board);
+    return;
 }
 
 int main()
@@ -329,11 +362,9 @@ int main()
     int seed = stoi_with_check(seed_str);
     init_with_cards(game_board, seed);
 
-    // Alustetaan koordinaateille tyhjät string-muuttujat
-    std::string x1_str = "";
-    std::string y1_str = "";
-    std::string x2_str = "";
-    std::string y2_str = "";
+    // Alustetaan koordinaatit sisältävä vektori
+    std::vector<unsigned int> coordinates;
+
 
     Players_type players = enter_players();
     Players_type::size_type player_amount = players.size();
@@ -344,21 +375,17 @@ int main()
 
         Players_type::value_type in_turn = players.at(player_index);
 
-        if(!enter_cards(in_turn, x1_str, y1_str, x2_str, y2_str)){
+        if(!enter_cards(in_turn, coordinates, factor1, factor2)){
             break;
         }
 
         else{
-            unsigned int x1 = stoi_with_check(x1_str);
-            unsigned int y1 = stoi_with_check(y1_str);
-            unsigned int x2 = stoi_with_check(x2_str);
-            unsigned int y2 = stoi_with_check(y2_str);
 
-            if(!check_coordinates_validity(game_board, factor1, factor2, x1, y1, x2, y2)){
+            if(!check_coordinates_validity(game_board, coordinates, factor1, factor2)){
                 continue;
             }
             else{
-                play(game_board, x1-1, y1-1, x2-1, y2-1);
+                play(game_board, coordinates);
                 if(player_index == player_amount){
                     player_index = 0;
                 }
