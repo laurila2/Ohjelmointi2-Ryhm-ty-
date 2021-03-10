@@ -21,10 +21,14 @@
  *  Peli päättyy, kun kaikki parit on löydetty, ja pelilauta on tyhjä.
  * Tällöin kerrotaan, kuka tai ketkä voittivat eli saivat eniten pareja.
  *
- * Ohjelman kirjoittaja
- * Nimet: Santeri Laurila (274301)
+ * Ohjelman kirjoittajat
+ * Nimi: Santeri Laurila (274301)
  * Käyttäjätunnus: laurila2
  * E-Mail: santeri.laurila@tuni.fi
+ *
+ * Nimi: Tuomo Pöllänen (K434889)
+ * Käyttäjätunnus: a729530
+ * E-Mail: tuomo.pollanen@tuni.fi
  *
  * Huomioita ohjelmasta ja sen toteutuksesta:
  *
@@ -32,6 +36,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -109,7 +114,7 @@ bool read_input_file(const std::string &filepath,
     // Tulostetaan virheilmoitus ja palataan funktiosta, mikäli tiedosto ei aukea
     if (!input_file_stream.is_open())
     {
-        std::cout << "Error: File cannot be opened." << std::endl;
+        std::cout << "Error: File could not be read." << std::endl;
         return false;
     }
 
@@ -290,6 +295,116 @@ void print_line(Tramway &rasse_data, const std::string &line_name)
     }
 }
 
+// Tulostaa aakkosjärjestyksesä kaikki annetut pysäkit allekkain
+void print_stops(const Tramway &rasse_data)
+{
+    std::cout << "All stops in alphabetical order:" << std::endl;
+
+    std::vector<std::string> stops;
+    bool stop_in_vector;
+
+    for (const auto &line : rasse_data)
+    {
+        for (const auto &stop : line.second)
+        {
+            stop_in_vector = false;
+
+            for (const auto &item : stops)
+            {
+                if (item == stop.second.name)
+                {
+                    stop_in_vector = true;
+                }
+            }
+            if (!stop_in_vector)
+            {
+                stops.push_back(stop.second.name);
+            }
+        }
+    }
+    std::sort(stops.begin(), stops.end());
+    for (size_t i = 0; i < stops.size(); ++i)
+    {
+        std::cout << stops.at(i) << std::endl;
+    }
+}
+
+// Tarkistaa, löytyykö pysäkki Tramway-tietorakenteesta
+bool stop_in_tramway(Tramway &rasse_data, const std::string &stop_name)
+{
+    bool stop_in_tramway = false;
+
+    for (const auto &line : rasse_data)
+    {
+        for (const auto &stop : line.second)
+        {
+            if (stop.second.name == stop_name)
+            {
+                stop_in_tramway = true;
+            }
+        }
+    }
+    return stop_in_tramway;
+}
+
+// Tulostaa allekkain kaikki linjat joille pysäkki kuuluu
+void print_stop(Tramway &rasse_data, const std::string &stop_name)
+{
+    if (stop_in_tramway(rasse_data, stop_name))
+    {
+        std::cout << "Stop " << stop_name
+                  << " can be found on the following lines:" << std::endl;
+
+        for (const auto &line : rasse_data)
+        {
+            for (const auto &stop : line.second)
+            {
+                if (stop.second.name == stop_name)
+                {
+                    std::cout << " - " << line.first << std::endl;
+                }
+            }
+        }
+    }
+    else
+    {
+        std::cout << "Error: Stop could not be found." << std::endl;
+    }
+}
+
+void print_distance(Tramway &rasse_data,
+                    const std::string &line_name,
+                    const std::string &stop_a,
+                    const std::string &stop_b)
+{
+    double distance = 0.0;
+    double from_stop = 0.0;
+    double to_stop = 0.0;
+
+    for (const auto &line : rasse_data)
+    {
+        if (line.first == line_name)
+        {
+            for (auto &stop : line.second)
+            {
+                if (stop.second.name == stop_a)
+                {
+                    from_stop = stop.first;
+                }
+                else if (stop.second.name == stop_b)
+                {
+                    to_stop = stop.first;
+                }
+            }
+        }
+    }
+
+    distance = to_stop - from_stop;
+
+    std::cout << "Distance between " << stop_a << " and " << stop_b << " is "
+              << distance << std::endl;
+}
+
 std::vector<std::string> ask_user_cmd()
 {
     // Kysytään syöte
@@ -347,12 +462,6 @@ bool interface()
             break;
         }
 
-        // "LINES"
-        else if (command[0] == "LINES")
-        {
-            print_tramlines(rasse_data);
-        }
-
         // "LINE"
         else if (command[0] == "LINE")
         {
@@ -366,6 +475,50 @@ bool interface()
                 std::cout << "Error: Invalid input." << std::endl;
                 continue;
             }
+        }
+
+        // "LINES"
+        else if (command[0] == "LINES")
+        {
+            print_tramlines(rasse_data);
+        }
+
+        // "DISTANCE"
+        else if (command[0] == "DISTANCE")
+        {
+            if (command.size() == 4)
+            {
+                std::string line_name = command[1];
+                std::string stop_a = command[2];
+                std::string stop_b = command[3];
+                print_distance(rasse_data, line_name, stop_a, stop_b);
+            }
+            else
+            {
+                std::cout << "Error: Invalid input." << std::endl;
+                continue;
+            }
+        }
+
+        // "STOP"
+        else if (command[0] == "STOP")
+        {
+            if (command.size() == 2)
+            {
+                std::string stop_name = command[1];
+                print_stop(rasse_data, stop_name);
+            }
+            else
+            {
+                std::cout << "Error: Invalid input." << std::endl;
+                continue;
+            }
+        }
+
+        // "STOPS"
+        else if (command[0] == "STOPS")
+        {
+            print_stops(rasse_data);
         }
 
         else
