@@ -231,9 +231,9 @@ void print_lines(const Tramway& rasse_data){
     }
 }
 
-void print_stops(const Tramway& rasse_data){
 
-    std::cout << "All tramlines in alphabetical order:" << std::endl;
+// Tulostaa kaikki pysäkit aakkosjärjestyksessä
+void print_stops(const Tramway& rasse_data){
 
     std::vector<std::string> stops;
     bool stop_in_vector;
@@ -254,11 +254,101 @@ void print_stops(const Tramway& rasse_data){
             }
         }
     }
+
+    std::cout << "All stops in alphabetical order:" << std::endl;
     std::sort(stops.begin(), stops.end());
     for(size_t i = 0; i < stops.size(); ++i){
         std::cout << stops.at(i) << std::endl;
     }
 }
+
+
+// Tulostaa yhden linjan pysäkit allekkain
+void print_line(Tramway &rasse_data, const std::string &line_name)
+{
+    if (rasse_data.find(line_name) == rasse_data.end())
+    {
+        // Linjaa ei löydy mapista
+        std::cout << "Error: Line could not be found." << std::endl;
+    }
+    else
+    {
+        // Linja löytyy
+        std::cout << "Line " << line_name
+                  << " goes through these stops in the order they are listed:"
+                  << std::endl;
+
+        for (auto &dist_stop_pair : rasse_data[line_name])
+        {
+            std::cout << "- " << dist_stop_pair.second.name << " : "
+                      << dist_stop_pair.first << std::endl;
+        }
+    }
+}
+
+// Tarkistaa, löytyykö pysäkki Tramway-tietorakenteesta
+bool stop_in_tramway(Tramway &rasse_data, const std::string &stop_name){
+
+    bool stop_in_tramway = false;
+
+    for(const auto& line : rasse_data){
+
+        for(const auto& stop : line.second){
+
+            if(stop.second.name == stop_name){
+
+                stop_in_tramway = true;
+            }
+        }
+    }
+    return stop_in_tramway;
+}
+
+
+// Tulostaa allekkain kaikki linjat joille pysäkki kuuluu
+void print_stop(Tramway &rasse_data, const std::string &stop_name){
+
+    if(stop_in_tramway(rasse_data, stop_name)){
+
+        std::cout << "Stop " << stop_name << " can be found on the following lines:" << std::endl;
+
+        for(const auto& line : rasse_data){
+
+            for(const auto& stop : line.second){
+
+                if(stop.second.name == stop_name){
+
+                    std::cout << " - " << line.first << std::endl;
+                }
+            }
+        }
+    }
+    else{
+        std::cout << "Error: Stop could not be found" << std::endl;
+    }
+}
+
+
+std::vector<std::string> ask_user_cmd()
+{
+    // Kysytään syöte
+    std::cout << "tramway> ";
+    std::string user_input = "";
+    std::getline(std::cin, user_input);
+    std::vector<std::string> input_fields = split(user_input, ' ');
+    std::string command = input_fields.at(0);
+
+    // Muutetaan komento suuriksi kirjaimiksi
+    std::transform(command.begin(),
+                   command.end(),
+                   command.begin(),
+                   [](unsigned char c) { return std::toupper(c); });
+
+    input_fields[0] = command;
+
+    return input_fields;
+}
+
 
 bool interface(){
 
@@ -284,29 +374,53 @@ bool interface(){
     while(true){
 
         // Kysytään syöte
-        std::cout << "tramway> ";
-        std::string user_input = "";
-        std::getline(std::cin, user_input);
-        std::vector<std::string> input_fields = split(user_input, ' ');
-
-        // Muutetaan syötteen ensimmäinen merkkijono isoiksi kirjaimiksi
-        for (auto& character : input_fields[0]) {
-            character = toupper(character);
-        }
+        std::vector<std::string> command = ask_user_cmd();
 
         // "QUIT"
-        if(input_fields.at(0) == "QUIT"){
+        if(command[0] == "QUIT"){
             break;
         }
 
         // "LINES"
-        if(input_fields.at(0) == "LINES"){
+        else if(command[0] == "LINES"){
             print_lines(rasse_data);
         }
 
-        //STOPS
-        if(input_fields.at(0) == "STOPS"){
+        // "LINE"
+        else if (command[0] == "LINE")
+        {
+            if (command.size() == 2)
+            {
+                std::string line_name = command[1];
+                print_line(rasse_data, line_name);
+            }
+            else
+            {
+                std::cout << "Error: Invalid input." << std::endl;
+                continue;
+            }
+        }
+
+        // "STOPS"
+        else if(command[0] == "STOPS"){
             print_stops(rasse_data);
+        }
+
+        // "STOP"
+        else if(command[0] == "STOP"){
+            if(command.size() == 2){
+                std::string stop_name = command[1];
+                print_stop(rasse_data, stop_name);
+            }
+            else{
+                std::cout << "Error: Invalid input." << std::endl;
+                continue;
+            }
+        }
+
+        // Virheellinen komento
+        else{
+            std::cout << "Error: Invalid input." << std::endl;
         }
 
     }
