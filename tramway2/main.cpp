@@ -257,7 +257,7 @@ bool parse_input_file(const std::vector<std::string> &rows, Tramway &rasse_data)
     return true;
 }
 
-void print_lines(const Tramway &rasse_data)
+void print_tramlines(const Tramway &rasse_data)
 {
     std::cout << "All tramlines in alphabetical order:" << std::endl;
 
@@ -267,7 +267,30 @@ void print_lines(const Tramway &rasse_data)
     }
 }
 
-std::string ask_user_cmd()
+// Tulostaa yhden linjan pysäkit allekkain
+void print_line(Tramway &rasse_data, const std::string &line_name)
+{
+    if (rasse_data.find(line_name) == rasse_data.end())
+    {
+        // Linjaa ei löydy mapista
+        std::cout << "Error: Line could not be found." << std::endl;
+    }
+    else
+    {
+        // Linja löytyy
+        std::cout << "Line " << line_name
+                  << " goes through these stops in the order they are listed:"
+                  << std::endl;
+
+        for (auto &dist_stop_pair : rasse_data[line_name])
+        {
+            std::cout << "- " << dist_stop_pair.second.name << " : "
+                      << dist_stop_pair.first << std::endl;
+        }
+    }
+}
+
+std::vector<std::string> ask_user_cmd()
 {
     // Kysytään syöte
     std::cout << "tramway> ";
@@ -276,12 +299,15 @@ std::string ask_user_cmd()
     std::vector<std::string> input_fields = split(user_input, ' ');
     std::string command = input_fields.at(0);
 
-    // Muutetaan komento pieniksi kirjaimiksi
+    // Muutetaan komento suuriksi kirjaimiksi
     std::transform(command.begin(),
                    command.end(),
                    command.begin(),
-                   [](unsigned char c) { return std::tolower(c); });
-    return command;
+                   [](unsigned char c) { return std::toupper(c); });
+
+    input_fields[0] = command;
+
+    return input_fields;
 }
 
 // Käyttöliittymä
@@ -313,18 +339,38 @@ bool interface()
 
     while (true)
     {
-        std::string command = ask_user_cmd();
+        std::vector<std::string> command = ask_user_cmd();
 
         // "QUIT"
-        if (command == "quit")
+        if (command[0] == "QUIT")
         {
             break;
         }
 
         // "LINES"
-        if (command == "lines")
+        else if (command[0] == "LINES")
         {
-            print_lines(rasse_data);
+            print_tramlines(rasse_data);
+        }
+
+        // "LINE"
+        else if (command[0] == "LINE")
+        {
+            if (command.size() > 1)
+            {
+                std::string line_name = command[1];
+                print_line(rasse_data, line_name);
+            }
+            else
+            {
+                std::cout << "Error: Invalid input." << std::endl;
+                continue;
+            }
+        }
+
+        else
+        {
+            std::cout << "Error: Invalid input." << std::endl;
         }
     }
     return true;
