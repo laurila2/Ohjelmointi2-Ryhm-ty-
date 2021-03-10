@@ -1,30 +1,16 @@
 /* RASSE
  *
  * Kuvaus:
- *  Ohjelma toteuttaa muistipelin. Pelissä on vaihteleva määrä kortteja ja
- * pelaajia. Pelin alussa käyttäjältä kysytään myös siemenluku, koska kortit
- * arvotaan satunnaisesti pelilaudalle.
- *  Joka kierroksella vuorossa oleva pelaaja antaa kahden kortin
- * koordinaatit (yhteensä neljä lukua), minkä jälkeen kyseiset kortit
- * käännetään näkyviin ja kerrotaan, ovatko ne parit vai ei.
- * Jos pelaaja sai parit, kortit poistetaan pelilaudalta, pelaajan
- * pistesaldoa kasvatetaan, ja hän saa uuden vuoron. Jos pelaaja ei saanut
- * pareja, kortit käännetään takaisin piiloon, ja vuoro siirtyy seuraavalle
- * pelaajalle.
- *  Ohjelma tarkistaa pelaajan antamat koordinaatit. Koordinaattien pitää
- * olla sellaiset, että niiden määrä kortti löytyy pelilaudalta.
- *  Muutosten jälkeen pelilauta tulostetaan aina uudelleen. Kortit kuvataan
- * kirjaimina alkaen A:sta niin pitkälle, kuin kortteja on. Kun pelilauta
- * tulostetaan, näkyvissä oleva kortti kuvataan kyseisellä kirjaimella.
- * Piiloon käännettyä korttia kuvaa risuaita (#), ja laudalta poistetun
- * kortin kohdalle tulostetaan piste.
- *  Peli päättyy, kun kaikki parit on löydetty, ja pelilauta on tyhjä.
- * Tällöin kerrotaan, kuka tai ketkä voittivat eli saivat eniten pareja.
  *
- * Ohjelman kirjoittaja
- * Nimet: Santeri Laurila (274301)
+ *
+ * Ohjelman kirjoittajat
+ * Nimi: Santeri Laurila (274301)
  * Käyttäjätunnus: laurila2
  * E-Mail: santeri.laurila@tuni.fi
+ *
+ * Nimi: Tuomo Pöllänen (K434889)
+ * Käyttäjätunnus: a729530
+ * E-Mail: tuomo.pollanen@tuni.fi
  *
  * Huomioita ohjelmasta ja sen toteutuksesta:
  *
@@ -35,6 +21,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <vector>
+#include <algorithm>
 
 
 // Alustetaan vakiomuuttujat
@@ -134,19 +122,16 @@ bool add_stop(Tramway& rasse_data, const std::string& line_name,
     // Iteroidaan linja
     for(auto& dist_stop_pair : rasse_data[line_name]){
 
-        // Pysäkkiä ei lisätä, mikåli linjalta löytyy jo saman niminen pysäkki
+        // Pysäkkiä ei lisätä, mikäli linjalta löytyy jo saman niminen pysäkki
         if(dist_stop_pair.second.name == stop_name){
             is_unique = false;
             break;
         }
     }
 
-    // Lisätään pysäkki linjalle, tai tulostetaan virheilmoitus
+    // Lisätään pysäkki linjalle, mikäli tätä ei jo ole linjalla
     if(is_unique){
         rasse_data[line_name][distance] = Stop{stop_name};
-    }
-    else{
-        std::cout << "Error: Stop/line already exists." << std::endl;
     }
 
     return is_unique;
@@ -160,7 +145,6 @@ bool add_line(Tramway& rasse_data, const std::string& line_name){
 
     // Tarkistetaan, onko lisättävä linja jo olemassa
     if(rasse_data.count(line_name) != 0){
-        std::cout << "Error: Stop/line already exists." << std::endl;
         return false;
     }
 
@@ -223,11 +207,14 @@ bool parse_input_file(const std::vector<std::string>& rows, Tramway& rasse_data)
         }
          // Jos lisättävää linjaa ei löydy tietorakenteesta, lisätään tämä
         if(rasse_data.count(line_name) == 0){
-            add_line(rasse_data, line_name);
+            if(!add_line(rasse_data, line_name)){
+                std::cout << "Error: Stop/line already exists." << std::endl;
+            }
         }
 
         // Lisätään pysäkki
         if(!add_stop(rasse_data, line_name, distance, stop_name)){
+            std::cout << "Error: Stop/line already exists." << std::endl;
             return false;
         }
     }
@@ -241,6 +228,35 @@ void print_lines(const Tramway& rasse_data){
 
     for(const auto& line : rasse_data){
         std::cout << line.first << std::endl;
+    }
+}
+
+void print_stops(const Tramway& rasse_data){
+
+    std::cout << "All tramlines in alphabetical order:" << std::endl;
+
+    std::vector<std::string> stops;
+    bool stop_in_vector;
+
+    for(const auto& line : rasse_data){
+
+        for(const auto& stop : line.second){
+
+            stop_in_vector = false;
+
+            for(const auto& item : stops){
+                if(item == stop.second.name){
+                    stop_in_vector = true;
+                }
+            }
+            if(!stop_in_vector){
+                stops.push_back(stop.second.name);
+            }
+        }
+    }
+    std::sort(stops.begin(), stops.end());
+    for(size_t i = 0; i < stops.size(); ++i){
+        std::cout << stops.at(i) << std::endl;
     }
 }
 
@@ -273,19 +289,29 @@ bool interface(){
         std::getline(std::cin, user_input);
         std::vector<std::string> input_fields = split(user_input, ' ');
 
+        // Muutetaan syötteen ensimmäinen merkkijono isoiksi kirjaimiksi
+        for (auto& character : input_fields[0]) {
+            character = toupper(character);
+        }
+
         // "QUIT"
         if(input_fields.at(0) == "QUIT"){
-            return false;
+            break;
         }
 
         // "LINES"
         if(input_fields.at(0) == "LINES"){
             print_lines(rasse_data);
         }
+
+        //STOPS
+        if(input_fields.at(0) == "STOPS"){
+            print_stops(rasse_data);
+        }
+
     }
     return true;
 }
-
 
 
 // Short and sweet main.
