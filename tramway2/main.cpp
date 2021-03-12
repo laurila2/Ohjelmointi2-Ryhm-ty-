@@ -18,7 +18,6 @@
 
 #include <algorithm>
 #include <cctype>
-#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -34,6 +33,7 @@ const size_t VALID_FIELD_COUNT_LOW = 2;
 const size_t VALID_FIELD_COUNT_HIGH = 3;
 const std::string INVALID_INPUT = "Error: Invalid input.";
 const std::string STOP_NOT_FOUND = "Error: Stop could not be found.";
+const std::string ERROR_STOP_OR_LINE = "Error: Stop/line already exists.";
 
 // Tietorakenne pysäkille
 struct Stop
@@ -147,7 +147,7 @@ bool add_stop(Tramway &rasse_data,
     }
     else
     {
-        std::cout << "Error: Stop/line already exists." << std::endl;
+        std::cout << ERROR_STOP_OR_LINE << std::endl;
     }
 
     return is_unique;
@@ -161,7 +161,7 @@ bool add_line(Tramway &rasse_data, const std::string &line_name)
     // Tarkistetaan, onko lisättävä linja jo olemassa
     if (rasse_data.count(line_name) != 0)
     {
-        std::cout << "Error: Stop/line already exists." << std::endl;
+        std::cout << ERROR_STOP_OR_LINE << std::endl;
         return false;
     }
 
