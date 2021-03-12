@@ -1,37 +1,24 @@
-/* RASSE
+/* ~~~ RASSE ~~~
  *
  * Kuvaus:
- *  Ohjelma toteuttaa muistipelin. Pelissä on vaihteleva määrä kortteja ja
- * pelaajia. Pelin alussa käyttäjältä kysytään myös siemenluku, koska kortit
- * arvotaan satunnaisesti pelilaudalle.
- *  Joka kierroksella vuorossa oleva pelaaja antaa kahden kortin
- * koordinaatit (yhteensä neljä lukua), minkä jälkeen kyseiset kortit
- * käännetään näkyviin ja kerrotaan, ovatko ne parit vai ei.
- * Jos pelaaja sai parit, kortit poistetaan pelilaudalta, pelaajan
- * pistesaldoa kasvatetaan, ja hän saa uuden vuoron. Jos pelaaja ei saanut
- * pareja, kortit käännetään takaisin piiloon, ja vuoro siirtyy seuraavalle
- * pelaajalle.
- *  Ohjelma tarkistaa pelaajan antamat koordinaatit. Koordinaattien pitää
- * olla sellaiset, että niiden määrä kortti löytyy pelilaudalta.
- *  Muutosten jälkeen pelilauta tulostetaan aina uudelleen. Kortit kuvataan
- * kirjaimina alkaen A:sta niin pitkälle, kuin kortteja on. Kun pelilauta
- * tulostetaan, näkyvissä oleva kortti kuvataan kyseisellä kirjaimella.
- * Piiloon käännettyä korttia kuvaa risuaita (#), ja laudalta poistetun
- * kortin kohdalle tulostetaan piste.
- *  Peli päättyy, kun kaikki parit on löydetty, ja pelilauta on tyhjä.
- * Tällöin kerrotaan, kuka tai ketkä voittivat eli saivat eniten pareja.
+ *  Ohjelma toteuttaa RASSE-ratikan. Rassella on reittilinjoja, 
+ *  reittilinjoilla pysäkkejä, joilla on tietona niiden 
+ *  etäisyys lähtöpyskäkistä.
  *
- * Ohjelman kirjoittaja
- * Nimet: Santeri Laurila (274301)
+ * Ohjelman kirjoittajat
+ * Nimi: Santeri Laurila (274301)
  * Käyttäjätunnus: laurila2
  * E-Mail: santeri.laurila@tuni.fi
  *
- * Huomioita ohjelmasta ja sen toteutuksesta:
+ * Nimi: Tuomo Pöllänen (K434889)
+ * Käyttäjätunnus: a729530
+ * E-Mail: tuomo.pollanen@tuni.fi
  *
  * */
 
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -45,6 +32,8 @@ const size_t STOP_FIELD_INDEX = 1;
 const size_t DIST_FIELD_INDEX = 2;
 const size_t VALID_FIELD_COUNT_LOW = 2;
 const size_t VALID_FIELD_COUNT_HIGH = 3;
+const std::string INVALID_INPUT = "Error: Invalid input.";
+const std::string STOP_NOT_FOUND = "Error: Stop could not be found.";
 
 // Tietorakenne pysäkille
 struct Stop
@@ -109,7 +98,7 @@ bool read_input_file(const std::string &filepath,
     // Tulostetaan virheilmoitus ja palataan funktiosta, mikäli tiedosto ei aukea
     if (!input_file_stream.is_open())
     {
-        std::cout << "Error: File cannot be opened." << std::endl;
+        std::cout << "Error: File could not be read." << std::endl;
         return false;
     }
 
@@ -128,8 +117,8 @@ bool read_input_file(const std::string &filepath,
 //           false: lisäys epäonnistui
 bool add_stop(Tramway &rasse_data,
               const std::string &line_name,
-              dist_type distance,
-              const std::string &stop_name)
+              const std::string &stop_name,
+              dist_type distance)
 {
     // Muuttuja, joka kertoo onko lisättävä pysäkki ainut linjallaan
     bool is_unique = true;
@@ -248,7 +237,7 @@ bool parse_input_file(const std::vector<std::string> &rows, Tramway &rasse_data)
         }
 
         // Lisätään pysäkki
-        if (!add_stop(rasse_data, line_name, distance, stop_name))
+        if (!add_stop(rasse_data, line_name, stop_name, distance))
         {
             return false;
         }
@@ -290,6 +279,148 @@ void print_line(Tramway &rasse_data, const std::string &line_name)
     }
 }
 
+// Tulostaa aakkosjärjestyksesä kaikki annetut pysäkit allekkain
+void print_stops(const Tramway &rasse_data)
+{
+    std::cout << "All stops in alphabetical order:" << std::endl;
+
+    std::vector<std::string> stops;
+    bool stop_in_vector;
+
+    for (const auto &line : rasse_data)
+    {
+        for (const auto &stop : line.second)
+        {
+            stop_in_vector = false;
+
+            for (const auto &item : stops)
+            {
+                if (item == stop.second.name)
+                {
+                    stop_in_vector = true;
+                }
+            }
+            if (!stop_in_vector)
+            {
+                stops.push_back(stop.second.name);
+            }
+        }
+    }
+    std::sort(stops.begin(), stops.end());
+    for (size_t i = 0; i < stops.size(); ++i)
+    {
+        std::cout << stops.at(i) << std::endl;
+    }
+}
+
+// Tarkistaa, löytyykö pysäkki Tramway-tietorakenteesta
+bool stop_in_tramway(Tramway &rasse_data, const std::string &stop_name)
+{
+    bool stop_in_tramway = false;
+
+    for (const auto &line : rasse_data)
+    {
+        for (const auto &stop : line.second)
+        {
+            if (stop.second.name == stop_name)
+            {
+                stop_in_tramway = true;
+            }
+        }
+    }
+    return stop_in_tramway;
+}
+
+// Tulostaa allekkain kaikki linjat joille pysäkki kuuluu
+void print_stop(Tramway &rasse_data, const std::string &stop_name)
+{
+    if (stop_in_tramway(rasse_data, stop_name))
+    {
+        std::cout << "Stop " << stop_name
+                  << " can be found on the following lines:" << std::endl;
+
+        for (const auto &line : rasse_data)
+        {
+            for (const auto &stop : line.second)
+            {
+                if (stop.second.name == stop_name)
+                {
+                    std::cout << " - " << line.first << std::endl;
+                }
+            }
+        }
+    }
+    else
+    {
+        std::cout << STOP_NOT_FOUND << std::endl;
+    }
+}
+
+// Poistaa pysäkin kaikilta linjoilta
+bool remove_stop(Tramway &rasse_data, const std::string &stop_name)
+{
+    if (stop_in_tramway(rasse_data, stop_name))
+    {
+        for (auto &line : rasse_data)
+        {
+            for (auto &stop : line.second)
+            {
+                if (stop.second.name == stop_name)
+                {
+                    rasse_data.at(line.first).erase(stop.first);
+                }
+            }
+        }
+    }
+    else
+    {
+        std::cout << STOP_NOT_FOUND << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+// Tulostaa pysäkkien välisen etäisyyden
+void print_distance(Tramway &rasse_data,
+                    const std::string &line_name,
+                    const std::string &stop_a,
+                    const std::string &stop_b)
+{
+    double distance = 0.0;
+    double from_stop = 0.0;
+    double to_stop = 0.0;
+
+    for (const auto &line : rasse_data)
+    {
+        if (line.first == line_name)
+        {
+            for (auto &stop : line.second)
+            {
+                if (stop.second.name == stop_a)
+                {
+                    from_stop = stop.first;
+                }
+                else if (stop.second.name == stop_b)
+                {
+                    to_stop = stop.first;
+                }
+            }
+        }
+    }
+    if (to_stop >= from_stop)
+    {
+        distance = to_stop - from_stop;
+    }
+    else
+    {
+        distance = from_stop - to_stop;
+    }
+
+    std::cout << "Distance between " << stop_a << " and " << stop_b << " is "
+              << distance << std::endl;
+}
+
 std::vector<std::string> ask_user_cmd()
 {
     // Kysytään syöte
@@ -311,7 +442,7 @@ std::vector<std::string> ask_user_cmd()
 }
 
 // Käyttöliittymä
-// palauttaa:  true
+// palauttaa:  true, tai
 //             false, jos tiedoston luku tai läpikäynti epäonnistuu
 //                    tai jos suoritus lopetetaan komennolla
 bool interface()
@@ -340,37 +471,134 @@ bool interface()
     while (true)
     {
         std::vector<std::string> command = ask_user_cmd();
+        std::string user_command = command[0];
 
-        // "QUIT"
-        if (command[0] == "QUIT")
+        // "ADDLINE"
+        if (user_command == "ADDLINE")
         {
-            break;
+            if (command.size() == 2)
+            {
+                std::string line_name = command[1];
+                if (add_line(rasse_data, line_name))
+                {
+                    std::cout << "Line was added." << std::endl;
+                }
+            }
+            else
+            {
+                std::cout << INVALID_INPUT << std::endl;
+                continue;
+            }
         }
 
-        // "LINES"
-        else if (command[0] == "LINES")
+        // "ADDSTOP"
+        else if (user_command == "ADDSTOP")
         {
-            print_tramlines(rasse_data);
+            if (command.size() == 4)
+            {
+                std::string line_name = command[1];
+                std::string stop_name = command[2];
+                dist_type distance = static_cast<dist_type>(
+                    std::stod(command[3]));
+                if (add_stop(rasse_data, line_name, stop_name, distance))
+                {
+                    std::cout << "Stop was added." << std::endl;
+                }
+            }
+            else
+            {
+                std::cout << INVALID_INPUT << std::endl;
+                continue;
+            }
         }
 
         // "LINE"
-        else if (command[0] == "LINE")
+        else if (user_command == "LINE")
         {
-            if (command.size() > 1)
+            if (command.size() == 2)
             {
                 std::string line_name = command[1];
                 print_line(rasse_data, line_name);
             }
             else
             {
-                std::cout << "Error: Invalid input." << std::endl;
+                std::cout << INVALID_INPUT << std::endl;
                 continue;
             }
         }
 
+        // "LINES"
+        else if (user_command == "LINES")
+        {
+            print_tramlines(rasse_data);
+        }
+
+        // "DISTANCE"
+        else if (user_command == "DISTANCE")
+        {
+            if (command.size() == 4)
+            {
+                std::string line_name = command[1];
+                std::string stop_a = command[2];
+                std::string stop_b = command[3];
+                print_distance(rasse_data, line_name, stop_a, stop_b);
+            }
+            else
+            {
+                std::cout << INVALID_INPUT << std::endl;
+                continue;
+            }
+        }
+
+        // "STOP"
+        else if (user_command == "STOP")
+        {
+            if (command.size() == 2)
+            {
+                std::string stop_name = command[1];
+                print_stop(rasse_data, stop_name);
+            }
+            else
+            {
+                std::cout << INVALID_INPUT << std::endl;
+                continue;
+            }
+        }
+
+        // "REMOVE"
+        else if (user_command == "REMOVE")
+        {
+            if (command.size() == 2)
+            {
+                std::string stop_name = command[1];
+                if (remove_stop(rasse_data, stop_name))
+                {
+                    std::cout << "Stop was removed from all lines."
+                              << std::endl;
+                }
+            }
+            else
+            {
+                std::cout << INVALID_INPUT << std::endl;
+                continue;
+            }
+        }
+
+        // "STOPS"
+        else if (user_command == "STOPS")
+        {
+            print_stops(rasse_data);
+        }
+
+        // "QUIT"
+        else if (user_command == "QUIT")
+        {
+            break;
+        }
+
         else
         {
-            std::cout << "Error: Invalid input." << std::endl;
+            std::cout << INVALID_INPUT << std::endl;
         }
     }
     return true;
