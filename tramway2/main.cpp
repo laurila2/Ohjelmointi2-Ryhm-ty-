@@ -4,6 +4,8 @@
  *  Ohjelma toteuttaa RASSE-ratikan. Rassella on reittilinjoja, 
  *  reittilinjoilla pysäkkejä, joilla on tietona niiden 
  *  etäisyys lähtöpyskäkistä.
+ *  Reittilinjat ja niiden pysäkit luetaan aluksi syötetiedostosta.
+ *  Käyttäjä voi tarkistella- ja muuttaa reittejä sekä näiden pysäkkejä erilaisilla komennoilla.
  *
  * Ohjelman kirjoittajat
  * Nimi: Santeri Laurila (274301)
@@ -43,10 +45,16 @@ struct Stop
 
 // Tietorakenne pysäkin etäisyydelle
 using dist_type = double;
+
 // Tietorakenne ratikkalinjoille, jotka sisältävät pysäkkejä
 using Tramway = std::map<std::string, std::map<dist_type, Stop>>;
 
-// Split apufunktio syötteen parsimiseen
+
+// Split apufunktio merkkijonon pilkkomista varten
+
+//  param:: s, string: pilkottava merkkijono
+//  param:: delimeter, const char: merkki, jonka kohdalta merkkijono pilkotaan
+//  param:: ignore_empty, bool: sivuutetaanko tyhjät osat
 std::vector<std::string> split(const std::string &s,
                                const char delimiter,
                                bool ignore_empty = false)
@@ -85,9 +93,14 @@ void print_rasse()
               << std::endl;
 }
 
+
 // Lukee syötetiedoston rivi kerrallaan, ja lisää rivit vektoriin
-// return:   true: tiedoston lukeminen onnistui
-//           false: tiedoston lukeminen epäonnistui
+
+//  param:: filepath, string: tiedoston nimi
+//  param:: lines, vector<string>, vektori johon rivit lisätään
+
+//  return:     true: tiedoston lukeminen onnistui
+//              false: tiedoston lukeminen epäonnistui
 bool read_input_file(const std::string &filepath,
                      std::vector<std::string> &lines)
 {
@@ -112,9 +125,16 @@ bool read_input_file(const std::string &filepath,
     return true;
 }
 
+
 // Lisää pysäkin Tramway-tietorakenteeseen, halutulle linjalle
-// return:   true: lisäys onnistui
-//           false: lisäys epäonnistui
+
+//  param:: rasse_data, Tramway: linjat/pysäkit sisältävä tietorakenne
+//  param:: line_name, string: linjan nimi
+//  param:: stop_name, string: pysäkin nimi
+//  param:: distance, dist_type: pysäkin etäisyys
+
+//  return:     true: lisäys onnistui
+//              false: lisäys epäonnistui
 bool add_stop(Tramway &rasse_data,
               const std::string &line_name,
               const std::string &stop_name,
@@ -153,9 +173,14 @@ bool add_stop(Tramway &rasse_data,
     return is_unique;
 }
 
+
 // Lisää linjan Tramway-tietorakenteeseen
-// return:   true: lisäys onnistui
-//           false: lisäys epäonnistui
+
+//  param:: rasse_data, Tramway: linjat/pysäkit sisältävä tietorakenne
+//  param:: line_name, string: linjan nimi
+
+//  return:     true: lisäys onnistui
+//              false: lisäys epäonnistui
 bool add_line(Tramway &rasse_data, const std::string &line_name)
 {
     // Tarkistetaan, onko lisättävä linja jo olemassa
@@ -170,9 +195,14 @@ bool add_line(Tramway &rasse_data, const std::string &line_name)
     return true;
 }
 
+
 // Tarkistaa, onko syötetiedoston rivi oikeellisessa muodossa
-// return:   true: on
-//           false: ei
+
+//  param:: rasse_data, Tramway: linjat/pysäkit sisältävä tietorakenne
+//  param:: fields, vector<string>: rivin datan sisältävä vektori
+
+//  return:     true: on
+//              false: ei
 bool validate_input_fields(Tramway &rasse_data,
                            const std::vector<std::string> &fields)
 {
@@ -198,10 +228,15 @@ bool validate_input_fields(Tramway &rasse_data,
     return true;
 }
 
+
 // Käy syötetiedoston sisällön läpi, ja lisää sen tiedot
 // Tramway-tietorakenteeseen mikäli nämä ovat oikeelliset
-// return:   true: läpikäynti onnistui
-//           false: läpikäynti epäonnistui
+
+//  param:: rows, vector<string>, rivit sisältävä vektori
+//  param:: rasse_data, Tramway, linjat/pysäkit sisältävä tietorakenne
+
+//  return:     true: läpikäynti onnistui
+//              false: läpikäynti epäonnistui
 bool parse_input_file(const std::vector<std::string> &rows, Tramway &rasse_data)
 {
     // Iteroidaan rivit sisältävä vektori
@@ -246,17 +281,26 @@ bool parse_input_file(const std::vector<std::string> &rows, Tramway &rasse_data)
     return true;
 }
 
+
+// Tulostaa kaikki linjat, sekä näiden pysäkit aakkosjärjestyksessä
+
+//  param:: rasse_data, Tramway: linjat/pysäkit sisältävä tietorakenne
 void print_tramlines(const Tramway &rasse_data)
 {
     std::cout << "All tramlines in alphabetical order:" << std::endl;
 
+    // Iteroidaan koko tietorakenteen sisältö
     for (const auto &line : rasse_data)
     {
         std::cout << line.first << std::endl;
     }
 }
 
+
 // Tulostaa yhden linjan pysäkit allekkain
+
+//  param:: rasse_data, Tramway: linjat/pysäkit sisältävä tietorakenne
+//  param:: line_name, string: tulostettavan linjan nimi
 void print_line(Tramway &rasse_data, const std::string &line_name)
 {
     if (rasse_data.find(line_name) == rasse_data.end())
@@ -271,6 +315,7 @@ void print_line(Tramway &rasse_data, const std::string &line_name)
                   << " goes through these stops in the order they are listed:"
                   << std::endl;
 
+        // Tulostetaan pysäkit
         for (auto &dist_stop_pair : rasse_data[line_name])
         {
             std::cout << "- " << dist_stop_pair.second.name << " : "
@@ -280,6 +325,8 @@ void print_line(Tramway &rasse_data, const std::string &line_name)
 }
 
 // Tulostaa aakkosjärjestyksesä kaikki annetut pysäkit allekkain
+
+//  param:: rasse_data, Tramway: linjat/pysäkit sisältävä tietorakenne
 void print_stops(const Tramway &rasse_data)
 {
     std::cout << "All stops in alphabetical order:" << std::endl;
@@ -287,12 +334,14 @@ void print_stops(const Tramway &rasse_data)
     std::vector<std::string> stops;
     bool stop_in_vector;
 
+    // Käydään pysäkit läpi
     for (const auto &line : rasse_data)
     {
         for (const auto &stop : line.second)
         {
             stop_in_vector = false;
 
+            // Tarkistetaan löytyykö iteroitava pysäkki jo vektorista
             for (const auto &item : stops)
             {
                 if (item == stop.second.name)
@@ -300,12 +349,15 @@ void print_stops(const Tramway &rasse_data)
                     stop_in_vector = true;
                 }
             }
+
+            // Lisätään pysäkki vektoriin
             if (!stop_in_vector)
             {
                 stops.push_back(stop.second.name);
             }
         }
     }
+    // Tulostetaan vektorin sisältö
     std::sort(stops.begin(), stops.end());
     for (size_t i = 0; i < stops.size(); ++i)
     {
@@ -313,11 +365,19 @@ void print_stops(const Tramway &rasse_data)
     }
 }
 
+
 // Tarkistaa, löytyykö pysäkki Tramway-tietorakenteesta
+
+//  param:: rasse_data, Tramway: linjat/pysäkit sisältävä tietorakenne
+//  param:: stop_name, string, tarkistettavan pysäkin nimi
+
+//  return::    true: löytyy
+//              false: ei löydy
 bool stop_in_tramway(Tramway &rasse_data, const std::string &stop_name)
 {
     bool stop_in_tramway = false;
 
+    // Iteroidaan pysäkit
     for (const auto &line : rasse_data)
     {
         for (const auto &stop : line.second)
@@ -331,14 +391,20 @@ bool stop_in_tramway(Tramway &rasse_data, const std::string &stop_name)
     return stop_in_tramway;
 }
 
-// Tulostaa allekkain kaikki linjat joille pysäkki kuuluu
+
+// Tulostaa allekkain kaikki linjat joille annettu pysäkki kuuluu
+
+//  param:: rasse_data, Tramway: linjat/pysäkit sisältävä tietorakenne
+//param:: stop_name, string, pysäkin nimi
 void print_stop(Tramway &rasse_data, const std::string &stop_name)
 {
+    // Pysäkki löytyy rakenteesta
     if (stop_in_tramway(rasse_data, stop_name))
     {
         std::cout << "Stop " << stop_name
                   << " can be found on the following lines:" << std::endl;
 
+        // Tulostetaan linjat
         for (const auto &line : rasse_data)
         {
             for (const auto &stop : line.second)
@@ -356,11 +422,20 @@ void print_stop(Tramway &rasse_data, const std::string &stop_name)
     }
 }
 
+
 // Poistaa pysäkin kaikilta linjoilta
+
+//  param:: rasse_data, Tramway: linjat/pysäkit sisältävä tietorakenne
+//  param:: stop_name, string: pysäkin nimi
+
+//  return::    true: poisto onnistui
+//              false; poisto epäonnistui
 bool remove_stop(Tramway &rasse_data, const std::string &stop_name)
 {
+    // Pysäkki löytyy tietorakenteesta
     if (stop_in_tramway(rasse_data, stop_name))
     {
+        // Poistetaan pysäkki
         for (auto &line : rasse_data)
         {
             for (auto &stop : line.second)
@@ -382,15 +457,22 @@ bool remove_stop(Tramway &rasse_data, const std::string &stop_name)
 }
 
 // Tulostaa pysäkkien välisen etäisyyden
+
+//  param:: rasse_data, Tramway: linjat/pysäkit sisältävä tietorakenne
+//  param:: line_name, string: pysäkin sisältävän linjan nimi
+//  param:: stop_a, string: toisen pysäkin nimi
+//  param:: stop_b, string: toisen pysäkin nimi
 void print_distance(Tramway &rasse_data,
                     const std::string &line_name,
                     const std::string &stop_a,
                     const std::string &stop_b)
 {
+    // Alustetaan etäisyyksien muuttujat
     double distance = 0.0;
     double from_stop = 0.0;
     double to_stop = 0.0;
 
+    // Iteroidaan pysäkit
     for (const auto &line : rasse_data)
     {
         if (line.first == line_name)
@@ -408,6 +490,8 @@ void print_distance(Tramway &rasse_data,
             }
         }
     }
+
+    // Lasketaan etäisyys
     if (to_stop >= from_stop)
     {
         distance = to_stop - from_stop;
@@ -417,11 +501,17 @@ void print_distance(Tramway &rasse_data,
         distance = from_stop - to_stop;
     }
 
+    // Tulostetaan etäisyys
     std::cout << "Distance between " << stop_a << " and " << stop_b << " is "
               << distance << std::endl;
 }
 
+
 // Käsittelee syötteen, joka sisältää ""-merkkejä"
+
+//  param:: user_input, string: käyttäjän syöte
+
+//  return:: vector<string>, käsitelty syöte pilkottuna vektoriin
 std::vector<std::string> split_double_quotes(std::string &user_input)
 {
     std::vector<std::string> parts = split(user_input, '"');
@@ -457,13 +547,19 @@ std::vector<std::string> split_double_quotes(std::string &user_input)
         }
         else
         {
+            // Osa lisätään vektoriin
             new_parts.push_back(p);
         }
     }
+    // Poistetaan vektorin perästä ylimääräinen objekti, palautetaan vektori
     new_parts.pop_back();
     return new_parts;
 }
 
+
+// Kysyy käyttäjän syötteen
+
+//  return:: vector<string>, syöte pilkottuna vektoriin
 std::vector<std::string> ask_user_cmd()
 {
     std::vector<std::string> input_fields;
@@ -472,10 +568,12 @@ std::vector<std::string> ask_user_cmd()
     std::string user_input = "";
     std::getline(std::cin, user_input);
 
+    // Käsitellään "-merkkejä sisältävä syöte
     if (user_input.find('"') != std::string::npos)
     {
         input_fields = split_double_quotes(user_input);
     }
+    // Käsitellään syöte joka ei sisällä "-merkkejä
     else
     {
         input_fields = split(user_input, ' ');
@@ -494,10 +592,10 @@ std::vector<std::string> ask_user_cmd()
     return input_fields;
 }
 
-// Käyttöliittymä
-// palauttaa:  true, tai
-//             false, jos tiedoston luku tai läpikäynti epäonnistuu
-//                    tai jos suoritus lopetetaan komennolla
+// Käyttöliittymä, joka jatkaa syötteen kysymistä kunnes käyttäjä syöttää quit-komennon
+
+//  return::    true: ohjelman suoritus lopetetaan quit-komennolla
+//              false: tiedoston luku tai läpikäynti epäonnistuu
 bool interface()
 {
     // Luodaan tietorakenne linjoja/pysäkkejä varten
@@ -665,12 +763,16 @@ bool interface()
 
 int main()
 {
+    // Tulostetaan rasse
     print_rasse();
 
+    // Avataan käyttöliittymä
     if (interface())
     {
+        // Lopetetaan ohjelma, jos käyttöliittymä suljetaan quit-komennolla
         return EXIT_SUCCESS;
     }
+    // Lopetetaan ohjelma, jos tiedoston luku/käsittely epäonnistuu
     else
     {
         return EXIT_FAILURE;
