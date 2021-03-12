@@ -43,6 +43,7 @@ using dist_type = double;
 using Tramway = std::map<std::string, std::map<dist_type, Stop>>;
 
 
+// Apufunktio syötteen parimiseksi
 std::vector<std::string> split(const std::string &s,
                                const char delimiter,
                                bool ignore_empty = false)
@@ -328,14 +329,61 @@ void print_stop(Tramway &rasse_data, const std::string &stop_name){
     }
 }
 
+// Käsittelee syötteen, joka sisältää ""-merkkejä"
+std::vector<std::string> split_double_quotes(std::string &user_input){
+
+    std::vector<std::string> parts = split(user_input, '"');
+    std::vector<std::string> new_parts;
+    std::string combined_string = "";
+    bool double_quotes_found = false;
+
+    for(std::string &p : parts){
+        if(p.front() == '"'){
+            double_quotes_found = true;
+
+            // Poistetaan lainausmerkit edestä
+            p.erase(p.begin());
+            combined_string += p;
+        }
+
+        if(double_quotes_found && p.back() == '"'){
+
+            // Poistetaan lainausmerkit perästä
+            p.erase(p.end());
+            combined_string += p;
+            new_parts.push_back(combined_string);
+            combined_string.erase();
+            double_quotes_found = false;
+        }
+
+        else if(double_quotes_found){
+            // Ollaan moniosaisen sanan välissä
+            combined_string += p;
+        }
+        else{
+            new_parts.push_back(p);
+        }
+    }
+    new_parts.pop_back();
+    return new_parts;
+}
+
 
 std::vector<std::string> ask_user_cmd()
 {
+    std::vector<std::string> input_fields;
     // Kysytään syöte
     std::cout << "tramway> ";
     std::string user_input = "";
     std::getline(std::cin, user_input);
-    std::vector<std::string> input_fields = split(user_input, ' ');
+
+    if(user_input.find('"') != std::string::npos){
+        input_fields = split_double_quotes(user_input);
+    }
+    else{
+        input_fields = split(user_input, ' ');
+    }
+
     std::string command = input_fields.at(0);
 
     // Muutetaan komento suuriksi kirjaimiksi
@@ -374,24 +422,29 @@ bool interface(){
     while(true){
 
         // Kysytään syöte
-        std::vector<std::string> command = ask_user_cmd();
+        std::vector<std::string> input = ask_user_cmd();
+
+        // Poistetaan komennon lopusta mahdollinen turha välilyönti
+        if(input[0].find(' ') != std::string::npos){
+            input[0].pop_back();
+        }
 
         // "QUIT"
-        if(command[0] == "QUIT"){
+        if(input[0] == "QUIT"){
             break;
         }
 
         // "LINES"
-        else if(command[0] == "LINES"){
+        else if(input[0] == "LINES"){
             print_lines(rasse_data);
         }
 
         // "LINE"
-        else if (command[0] == "LINE")
+        else if (input[0] == "LINE")
         {
-            if (command.size() == 2)
+            if (input.size() == 2)
             {
-                std::string line_name = command[1];
+                std::string line_name = input[1];
                 print_line(rasse_data, line_name);
             }
             else
@@ -400,20 +453,20 @@ bool interface(){
                 continue;
             }
         }
-
         // "STOPS"
-        else if(command[0] == "STOPS"){
+        else if(input[0] == "STOPS"){
             print_stops(rasse_data);
         }
 
         // "STOP"
-        else if(command[0] == "STOP"){
-            if(command.size() == 2){
-                std::string stop_name = command[1];
+        else if(input[0] == "STOP"){
+            if(input.size() == 2){
+                std::string stop_name = input[1];
                 print_stop(rasse_data, stop_name);
             }
             else{
                 std::cout << "Error: Invalid input." << std::endl;
+                std::cout << "halo" << std::endl;
                 continue;
             }
         }
@@ -421,6 +474,7 @@ bool interface(){
         // Virheellinen komento
         else{
             std::cout << "Error: Invalid input." << std::endl;
+            std::cout << "vituix" << std::endl;
         }
 
     }
