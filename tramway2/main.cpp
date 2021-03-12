@@ -73,8 +73,7 @@ std::vector<std::string> split(const std::string &s,
 // Tulostaa RASSE-ratikan
 void print_rasse()
 {
-    std::cout <<
-                 "=====//==================//===\n"
+    std::cout << "=====//==================//===\n"
                  "  __<<__________________<<__   \n"
                  " | ____ ____ ____ ____ ____ |  \n"
                  " | |  | |  | |  | |  | |  | |  \n"
@@ -82,7 +81,8 @@ void print_rasse()
                  ".|                  RASSE   |. \n"
                  ":|__________________________|: \n"
                  "___(o)(o)___(o)(o)___(o)(o)____\n"
-                 "-------------------------------" << std::endl;
+                 "-------------------------------"
+              << std::endl;
 }
 
 // Lukee syötetiedoston rivi kerrallaan, ja lisää rivit vektoriin
@@ -421,13 +421,66 @@ void print_distance(Tramway &rasse_data,
               << distance << std::endl;
 }
 
+// Käsittelee syötteen, joka sisältää ""-merkkejä"
+std::vector<std::string> split_double_quotes(std::string &user_input)
+{
+    std::vector<std::string> parts = split(user_input, '"');
+    std::vector<std::string> new_parts;
+    std::string combined_string = "";
+    bool double_quotes_found = false;
+
+    for (std::string &p : parts)
+    {
+        if (p.front() == '"')
+        {
+            double_quotes_found = true;
+
+            // Poistetaan lainausmerkit edestä
+            p.erase(p.begin());
+            combined_string += p;
+        }
+
+        if (double_quotes_found && p.back() == '"')
+        {
+            // Poistetaan lainausmerkit perästä
+            p.erase(p.end());
+            combined_string += p;
+            new_parts.push_back(combined_string);
+            combined_string.erase();
+            double_quotes_found = false;
+        }
+
+        else if (double_quotes_found)
+        {
+            // Ollaan moniosaisen sanan välissä
+            combined_string += p;
+        }
+        else
+        {
+            new_parts.push_back(p);
+        }
+    }
+    new_parts.pop_back();
+    return new_parts;
+}
+
 std::vector<std::string> ask_user_cmd()
 {
+    std::vector<std::string> input_fields;
     // Kysytään syöte
     std::cout << "tramway> ";
     std::string user_input = "";
     std::getline(std::cin, user_input);
-    std::vector<std::string> input_fields = split(user_input, ' ');
+
+    if (user_input.find('"') != std::string::npos)
+    {
+        input_fields = split_double_quotes(user_input);
+    }
+    else
+    {
+        input_fields = split(user_input, ' ');
+    }
+
     std::string command = input_fields.at(0);
 
     // Muutetaan komento suuriksi kirjaimiksi
@@ -472,6 +525,12 @@ bool interface()
     {
         std::vector<std::string> command = ask_user_cmd();
         std::string user_command = command[0];
+
+        // Poistetaan komennon lopusta mahdollinen turha välilyönti
+        if (user_command.find(' ') != std::string::npos)
+        {
+            user_command.pop_back();
+        }
 
         // "ADDLINE"
         if (user_command == "ADDLINE")
